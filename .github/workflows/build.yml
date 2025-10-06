@@ -1,0 +1,40 @@
+name: Build Debug APK
+
+on:
+  workflow_dispatch:   # run manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK (cmdline tools + platform-tools)
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 33
+          build-tools: '33.0.2'
+
+      - name: Normalize gradlew line endings and make executable
+        run: |
+          # remove Windows CRLF that break gradlew on Linux runners
+          sed -i 's/\r$//' ./gradlew || true
+          # ensure executable permission on runner
+          chmod +x ./gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HotspotManager-debug-apk
+          path: app/build/outputs/**/*.apk
